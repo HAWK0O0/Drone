@@ -1,2 +1,21 @@
-# Drone
-My experience is in building drones and learning and developing my skills in engineering, design, operation and testing of devices.
+# Drone Project Portfolio
+
+هذا المستودع عبارة عن ملف مشروع الدرون الخاص بي، ويحتوي على تجاربي وخطوات التطوير بشكل واضح حتى أستطيع مشاركة الرابط في السيرة الذاتية.
+
+## الهدف
+- توثيق كل ما أعمل عليه في مشروع الدرون
+- عرض التجارب بشكل احترافي لأي شركة أو جهة مهتمة
+- متابعة التطوير المستمر (ما زلت أختبر وأجرّب)
+
+## محتوى المستودع
+- [`experiments/01-processors.md`](experiments/01-processors.md): تجارب المعالجات التي تم اختبارها
+- [`experiments/02-software.md`](experiments/02-software.md): تجارب البرمجيات والأدوات
+- [`experiments/03-current-testing.md`](experiments/03-current-testing.md): الحالة الحالية وما يتم اختباره الآن
+
+## طريقة الاستخدام
+1. ابدأ من ملف المعالجات لفهم قرارات الهاردوير.
+2. راجع ملف البرمجيات لمعرفة الأدوات والأنظمة التي تم تجربتها.
+3. راجع ملف الاختبارات الحالية لمعرفة آخر التحديثات.
+
+## ملاحظة
+سيتم تحديث الملفات مع كل خطوة جديدة في المشروع.
