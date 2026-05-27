@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BetaFly Configurator</title>
+  <style>
+    /* ================================================================
+       RESET & CSS CUSTOM PROPERTIES
+       ================================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #0b0b0b;
+      --sidebar:      #151515;
+      --panel:        #141414;
+      --panel-border: #242424;
+      --accent:       #00d1ff;
+      --accent-dim:   rgba(0, 209, 255, 0.12);
+      --accent-glow:  0 0 16px rgba(0, 209, 255, 0.35);
+      --text-1:       #e2e2e2;
+      --text-2:       #888;
+      --text-3:       #444;
+      --green:        #00ff88;
+      --yellow:       #ffc107;
+      --red:          #ff4545;
+      --sidebar-w:    68px;
+      --sidebar-open: 214px;
+      --topbar-h:     50px;
+    }
+
+    /* ================================================================
+       BASE
+       ================================================================ */
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      background: var(--bg);
+      color: var(--text-1);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      display: flex;
+    }
+
+    button { font-family: inherit; cursor: pointer; }
+    input  { font-family: inherit; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar            { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track      { background: transparent; }
+    ::-webkit-scrollbar-thumb      { background: #2e2e2e; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover{ background: #444; }
+
+    /* ================================================================
+       SIDEBAR
+       ================================================================ */
+    #sidebar {
+      width: var(--sidebar-w);
+      background: var(--sidebar);
+      border-right: 1px solid var(--panel-border);
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      padding: 12px 0 16px;
+      flex-shrink: 0;
+      overflow: hidden;
+      transition: width 0.22s cubic-bezier(.4,0,.2,1);
+      z-index: 50;
+    }
+    #sidebar:hover { width: var(--sidebar-open); }
+
+    /* Logo */
+    .sb-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 14px 18px;
+      border-bottom: 1px solid var(--panel-border);
+      margin-bottom: 8px;
+      white-space: nowrap;
+    }
+    .sb-logo-icon { flex-shrink: 0; }
+    .sb-logo-icon svg { display: block; width: 38px; height: 38px; }
+    .sb-logo-text {
+      font-size: 13px; font-weight: 700;
+      color: var(--accent); letter-spacing: .12em;
+      text-transform: uppercase;
+      opacity: 0; transition: opacity .18s .05s;
+    }
+    #sidebar:hover .sb-logo-text { opacity: 1; }
+
+    /* Nav items */
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      padding: 11px 22px 11px 23px;
+      border-left: 3px solid transparent;
+      cursor: pointer;
+      white-space: nowrap;
+      user-select: none;
+      transition: background .14s, border-color .14s;
+    }
+    .nav-item:hover            { background: var(--accent-dim); border-left-color: rgba(0,209,255,.4); }
+    .nav-item.active           { background: var(--accent-dim); border-left-color: var(--accent); }
+    .nav-item .ni-icon         { flex-shrink: 0; width: 20px; height: 20px; color: var(--text-2); transition: color .14s; display: flex; align-items:center; justify-content:center; }
+    .nav-item:hover .ni-icon,
+    .nav-item.active .ni-icon  { color: var(--accent); }
+    .nav-item .ni-icon svg     { width: 20px; height: 20px; fill: currentColor; }
+    .nav-item .ni-label        { font-size: 13px; font-weight: 500; color: var(--text-2); opacity: 0; transition: opacity .18s .05s, color .14s; }
+    #sidebar:hover .ni-label   { opacity: 1; }
+    .nav-item:hover .ni-label,
+    .nav-item.active .ni-label { color: var(--accent); }
+
+    /* WS status row */
+    .sb-ws {
+      margin-top: auto;
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 24px;
+      white-space: nowrap;
+    }
+    .ws-dot {
+      width: 9px; height: 9px; border-radius: 50%;
+      background: var(--red); flex-shrink: 0;
+      transition: background .3s, box-shadow .3s;
+    }
+    .ws-dot.on { background: var(--green); box-shadow: 0 0 7px var(--green); animation: blink 2.2s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.45} }
+    .ws-label { font-size: 11px; color: var(--text-3); opacity: 0; transition: opacity .18s; }
+    #sidebar:hover .ws-label { opacity: 1; }
+
+    /* ================================================================
+       MAIN AREA
+       ================================================================ */
+    #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+    /* Topbar */
+    #topbar {
+      height: var(--topbar-h); flex-shrink: 0;
+      background: var(--sidebar);
+      border-bottom: 1px solid var(--panel-border);
+      display: flex; align-items: center; gap: 12px;
+      padding: 0 22px;
+    }
+    #topbar h1 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--text-1); }
+    .tb-badge  { font-size: 10px; padding: 3px 8px; border-radius: 4px; background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(0,209,255,.25); letter-spacing: .06em; }
+    #tb-tab    { margin-left: auto; font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: .1em; }
+
+    /* Content */
+    #content { flex: 1; overflow-y: auto; padding: 22px; }
+
+    /* Tab panes */
+    .tab-pane            { display: none; }
+    .tab-pane.active     { display: block; animation: fadeUp .2s ease; }
+    @keyframes fadeUp    { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+    /* ================================================================
+       SHARED COMPONENTS
+       ================================================================ */
+
+    /* Panel card */
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 9px;
+      padding: 20px;
+    }
+    .panel-title {
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .14em;
+      color: var(--text-2);
+      margin-bottom: 18px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .panel-title::after { content:''; flex:1; height:1px; background: var(--panel-border); }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 9px 18px; border-radius: 6px; border: none;
+      font-size: 12px; font-weight: 700; letter-spacing: .06em;
+      text-transform: uppercase;
+      transition: background .14s, box-shadow .14s, transform .1s, border-color .14s;
+      outline: none;
+    }
+    .btn svg { width: 15px; height: 15px; fill: currentColor; flex-shrink: 0; }
+    .btn:active { transform: scale(.96); }
+
+    .btn-primary  { background: var(--accent); color: #000; }
+    .btn-primary:hover { background: #2bdcff; box-shadow: var(--accent-glow); }
+
+    .btn-outline  { background: transparent; color: var(--accent); border: 1px solid rgba(0,209,255,.45); }
+    .btn-outline:hover { background: var(--accent-dim); border-color: var(--accent); }
+
+    .btn-danger   { background: transparent; color: var(--red); border: 1px solid rgba(255,69,69,.4); }
+    .btn-danger:hover { background: rgba(255,69,69,.1); border-color: var(--red); }
+
+    .btn-warning  { background: transparent; color: var(--yellow); border: 1px solid rgba(255,193,7,.4); }
+    .btn-warning:hover { background: rgba(255,193,7,.1); border-color: var(--yellow); }
+
+    /* Toggle switch */
+    .toggle       { position: relative; display: inline-block; width: 42px; height: 23px; flex-shrink:0; }
+    .toggle input { opacity:0; width:0; height:0; position:absolute; }
+    .toggle-track {
+      position: absolute; inset: 0;
+      background: var(--panel-border); border-radius: 12px;
+      transition: background .2s;
+    }
+    .toggle-track::before {
+      content:''; position:absolute;
+      width: 17px; height: 17px;
+      left: 3px; top: 3px;
+      background: #666; border-radius: 50%;
+      transition: transform .2s, background .2s;
+    }
+    .toggle input:checked + .toggle-track             { background: rgba(0,209,255,.25); border: 1px solid var(--accent); }
+    .toggle input:checked + .toggle-track::before     { transform: translateX(19px); background: var(--accent); }
+
+    /* Toast */
+    #toast {
+      position: fixed; bottom: 22px; right: 22px;
+      background: var(--panel); border: 1px solid var(--accent);
+      border-radius: 7px; padding: 11px 18px;
+      font-size: 12px; color: var(--accent);
+      opacity: 0; transform: translateY(6px);
+      transition: opacity .22s, transform .22s;
+      pointer-events: none; z-index: 999;
+    }
+    #toast.show { opacity: 1; transform: none; }
+
+    /* ================================================================
+       DASHBOARD
+       ================================================================ */
+    .dash-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 18px;
+    }
+
+    /* Battery gauge */
+    .gauge-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+    .gauge-svg  { overflow: visible; }
+
+    /* Telem mini-cards */
+    .telem-row  { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .telem-card {
+      background: var(--bg); border: 1px solid var(--panel-border);
+      border-radius: 7px; padding: 12px 14px;
+      display: flex; flex-direction: column; gap: 3px;
+    }
+    .tc-label { font-size: 9px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-3); }
+    .tc-val   { font-size: 22px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1; }
+    .tc-unit  { font-size: 10px; color: var(--text-2); }
+
+    /* 3D Cube */
+    .orient-wrap { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+    .scene       { width: 200px; height: 180px; perspective: 520px; display: flex; align-items: center; justify-content: center; }
+
+    .cube {
+      width: 130px; height: 65px;
+      position: relative; transform-style: preserve-3d;
+      transform: rotateX(0deg) rotateZ(0deg);
+      transition: transform .28s ease;
+    }
+    .cf {
+      position: absolute;
+      border: 1.5px solid rgba(0,209,255,.7);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; color: rgba(0,209,255,.8);
+      letter-spacing: .07em;
+      backface-visibility: hidden;
+    }
+    /* Front / Back: 130×65, depth 40 */
+    .cf.front  { width:130px; height:65px; left:0;   top:0;   background:rgba(0,209,255,.06); transform: translateZ(20px); }
+    .cf.back   { width:130px; height:65px; left:0;   top:0;   background:rgba(0,209,255,.02); transform: rotateY(180deg) translateZ(20px); }
+    .cf.top    { width:130px; height:40px; left:0;   top:-9px; background:rgba(0,209,255,.09); transform: rotateX(90deg) translateZ(23px); }
+    .cf.bottom { width:130px; height:40px; left:0;   top:-9px; background:rgba(0,209,255,.03); transform: rotateX(-90deg) translateZ(42px); }
+    .cf.left   { width: 40px; height: 65px;left:-12px;top:0;  background:rgba(0,209,255,.04); transform: rotateY(-90deg) translateZ(20px); }
+    .cf.right  { width: 40px; height: 65px;left:-12px;top:0;  background:rgba(0,209,255,.04); transform: rotateY(90deg) translateZ(110px); }
+
+    /* Drone arm indicators overlaid on front face */
+    .drone-arms {
+      position: absolute; inset: 0; transform: translateZ(21px);
+      pointer-events: none;
+    }
+    .drone-arms svg { width: 130px; height: 65px; overflow: visible; }
+
+    .angle-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+    .angle-card  { background: var(--bg); border: 1px solid var(--panel-border); border-radius: 7px; padding: 10px 14px; text-align: center; }
+    .ac-label    { font-size: 9px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-3); margin-bottom: 4px; }
+    .ac-val      { font-size: 20px; font-weight: 700; color: var(--green); font-variant-numeric: tabular-nums; }
+
+    /* ================================================================
+       PID TUNING
+       ================================================================ */
+    .pid-tbl { width: 100%; border-collapse: collapse; }
+    .pid-tbl th, .pid-tbl td { padding: 11px 16px; text-align: left; border-bottom: 1px solid var(--panel-border); vertical-align: middle; }
+    .pid-tbl th { font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-2); font-weight: 600; background: var(--bg); white-space: nowrap; }
+    .pid-tbl tr:last-child td { border-bottom: none; }
+    .pid-tbl td:first-child   { font-size: 12px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: .1em; width: 80px; }
+
+    .pid-in {
+      background: var(--bg); border: 1px solid var(--panel-border);
+      border-radius: 6px; color: var(--text-1);
+      font-size: 15px; font-weight: 700; padding: 7px 10px;
+      width: 82px; text-align: center; outline: none;
+      transition: border-color .14s, box-shadow .14s;
+      font-variant-numeric: tabular-nums;
+      -moz-appearance: textfield;
+    }
+    .pid-in::-webkit-outer-spin-button,
+    .pid-in::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .pid-in:hover  { border-color: #3a3a3a; }
+    .pid-in:focus  { border-color: var(--accent); box-shadow: var(--accent-glow); }
+
+    .pid-actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+
+    /* ================================================================
+       CLI
+       ================================================================ */
+    .cli-wrap   { display: flex; flex-direction: column; height: calc(100vh - var(--topbar-h) - 44px); min-height: 360px; }
+
+    #cli-out {
+      flex: 1; background: #000;
+      border: 1px solid var(--panel-border); border-radius: 8px 8px 0 0;
+      padding: 14px 16px; overflow-y: auto;
+      font-family: 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+      font-size: 12.5px; line-height: 1.65;
+    }
+    .cl        { margin-bottom: 1px; word-break: break-all; white-space: pre-wrap; }
+    .cl.sent   { color: #00ff88; }
+    .cl.recv   { color: #e0e0e0; }
+    .cl.info   { color: #555; font-style: italic; }
+    .cl.error  { color: #ff4545; }
+
+    .cli-bar {
+      display: flex; background: #080808;
+      border: 1px solid var(--panel-border); border-top: none;
+      border-radius: 0 0 8px 8px; overflow: hidden;
+    }
+    .cli-ps    { padding: 0 12px; display: flex; align-items: center; color: #00ff88; font-family: 'Cascadia Code', monospace; font-size: 12.5px; background: #080808; border-right: 1px solid var(--panel-border); user-select: none; }
+    #cli-in    { flex:1; background: transparent; border: none; outline: none; color: var(--text-1); font-family: 'Cascadia Code', 'Consolas', monospace; font-size: 12.5px; padding: 11px 14px; caret-color: var(--accent); }
+    #cli-in::placeholder { color: #2e2e2e; }
+    #cli-send  { background: transparent; border: none; border-left: 1px solid var(--panel-border); padding: 0 16px; color: var(--accent); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; transition: background .14s; }
+    #cli-send:hover { background: var(--accent-dim); }
+
+    /* ================================================================
+       MOTORS
+       ================================================================ */
+    .warn-box {
+      background: rgba(255,193,7,.07); border: 1px solid rgba(255,193,7,.35);
+      border-radius: 7px; padding: 12px 15px;
+      display: flex; align-items: flex-start; gap: 10px;
+      font-size: 12px; color: var(--yellow); line-height: 1.5;
+      margin-bottom: 16px;
+    }
+    .warn-box svg { width: 18px; height: 18px; fill: var(--yellow); flex-shrink: 0; margin-top: 1px; }
+
+    .motor-toggle-row { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    .motor-toggle-row span { font-size: 13px; color: var(--text-2); }
+
+    .motors-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; max-width: 440px; }
+    .motor-card  { background: var(--bg); border: 1px solid var(--panel-border); border-radius: 8px; padding: 16px 14px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .motor-name  { font-size: 11px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: .08em; }
+    .motor-val   { font-size: 22px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+
+    /* Vertical range slider (cross-browser) */
+    .motor-sl-wrap { position: relative; width: 38px; height: 140px; }
+    .motor-sl {
+      position: absolute;
+      width: 140px; height: 38px;
+      left: 50%; top: 50%;
+      transform: translate(-50%,-50%) rotate(-90deg);
+      -webkit-appearance: none; appearance: none;
+      background: var(--panel-border); border-radius: 4px; outline: none; cursor: pointer;
+      transition: opacity .2s;
+    }
+    .motor-sl:disabled         { opacity: .35; cursor: not-allowed; }
+    .motor-sl::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 36px; height: 20px;
+      background: var(--accent); border-radius: 4px;
+      box-shadow: 0 0 8px rgba(0,209,255,.4);
+      cursor: pointer;
+    }
+    .motor-sl::-moz-range-thumb {
+      width: 36px; height: 20px;
+      background: var(--accent); border-radius: 4px; border: none;
+    }
+    .motor-sl:not(:disabled)::-webkit-slider-thumb:hover { background: #33daff; }
+
+    /* ================================================================
+       SAVE / REBOOT
+       ================================================================ */
+    .save-grid  { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+    .act-card   { background: var(--bg); border: 1px solid var(--panel-border); border-radius: 9px; padding: 26px 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+    .act-card svg { width: 42px; height: 42px; fill: var(--accent); opacity: .65; }
+    .act-card h3  { font-size: 13px; font-weight: 700; color: var(--text-1); }
+    .act-card p   { font-size: 11.5px; color: var(--text-2); line-height: 1.55; max-width: 220px; }
+
+    /* ================================================================
+       RESPONSIVE
+       ================================================================ */
+    @media (max-width: 560px) {
+      :root { --sidebar-w: 52px; }
+      #content { padding: 14px; }
+      .dash-grid { grid-template-columns: 1fr; }
+      .pid-in    { width: 66px; font-size: 13px; }
+      .pid-tbl th, .pid-tbl td { padding: 9px 10px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     SIDEBAR
+════════════════════════════════════════════════════════════════════ -->
+<nav id="sidebar">
+
+  <div class="sb-logo">
+    <div class="sb-logo-icon">
+      <!-- Drone icon -->
+      <svg viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="19" cy="19" r="4.5" fill="#00d1ff"/>
+        <line x1="7"  y1="7"  x2="14" y2="14" stroke="#00d1ff" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="5.5" cy="5.5" r="3.5" stroke="#00d1ff" stroke-width="1.8" fill="none"/>
+        <line x1="31" y1="7"  x2="24" y2="14" stroke="#00d1ff" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="32.5" cy="5.5" r="3.5" stroke="#00d1ff" stroke-width="1.8" fill="none"/>
+        <line x1="7"  y1="31" x2="14" y2="24" stroke="#00d1ff" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="5.5" cy="32.5" r="3.5" stroke="#00d1ff" stroke-width="1.8" fill="none"/>
+        <line x1="31" y1="31" x2="24" y2="24" stroke="#00d1ff" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="32.5" cy="32.5" r="3.5" stroke="#00d1ff" stroke-width="1.8" fill="none"/>
+      </svg>
+    </div>
+    <span class="sb-logo-text">BetaFly</span>
+  </div>
+
+  <div class="nav-item active" data-tab="dashboard">
+    <div class="ni-icon">
+      <svg viewBox="0 0 24 24"><path d="M3 13h4v-2H3v2zm0 4h4v-2H3v2zm0-8h4V7H3v2zm8 8h2v-2h-2v2zm6-12v2h2V5h-2zm-6 0v2h2V5h-2zM7 21h2v-2H7v2zm-4 0h2v-2H3v2zm8 0h2v-2h-2v2zm4 0h2v-2h-2v2zm4 0h2v-2h-2v2zm0-4h2v-2h-2v2zm0-4h2v-2h-2v2zm-4-8h-2v2h2V5zm-4 4h8v4h-8V9zm1 3h6v-2h-6v2z"/></svg>
+    </div>
+    <span class="ni-label">Dashboard</span>
+  </div>
+
+  <div class="nav-item" data-tab="pid">
+    <div class="ni-icon">
+      <svg viewBox="0 0 24 24"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg>
+    </div>
+    <span class="ni-label">PID Tuning</span>
+  </div>
+
+  <div class="nav-item" data-tab="cli">
+    <div class="ni-icon">
+      <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10l1.5 1.5L6 13l1 1 2.5-2.5L7 9l-1 1zm5 3h5v-2h-5v2z"/></svg>
+    </div>
+    <span class="ni-label">CLI</span>
+  </div>
+
+  <div class="nav-item" data-tab="motors">
+    <div class="ni-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 3C8.13 3 5 6.13 5 10c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-1.26c1.81-1.27 3-3.36 3-5.74 0-3.87-3.13-7-7-7zM9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1z"/></svg>
+    </div>
+    <span class="ni-label">Motors</span>
+  </div>
+
+  <div class="nav-item" data-tab="save">
+    <div class="ni-icon">
+      <svg viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+    </div>
+    <span class="ni-label">Save / Reboot</span>
+  </div>
+
+  <div class="sb-ws">
+    <div class="ws-dot" id="ws-dot"></div>
+    <span class="ws-label" id="ws-label">Disconnected</span>
+  </div>
+
+</nav>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     MAIN
+════════════════════════════════════════════════════════════════════ -->
+<div id="main">
+
+  <!-- Topbar -->
+  <div id="topbar">
+    <h1>BetaFly Configurator</h1>
+    <span class="tb-badge">STM32-WB</span>
+    <span id="tb-tab">Dashboard</span>
+  </div>
+
+  <!-- Content area -->
+  <div id="content">
+
+    <!-- ══════════════════════ DASHBOARD ══════════════════════ -->
+    <div class="tab-pane active" id="tab-dashboard">
+      <div class="dash-grid">
+
+        <!-- Battery panel -->
+        <div class="panel">
+          <div class="panel-title">Battery Status</div>
+          <div class="gauge-wrap">
+            <!--
+              Arc gauge: circle cx=100 cy=100 r=70
+              Circumference = 2π×70 ≈ 439.82
+              270° span     = 0.75 × 439.82 ≈ 329.87
+              Rotation origin: start at 135° (lower-left), rotate(135,100,100)
+            -->
+            <svg class="gauge-svg" width="200" height="170" viewBox="0 0 200 200">
+              <!-- Background track (270°) -->
+              <circle id="gauge-track" cx="100" cy="100" r="70"
+                fill="none" stroke="#252525" stroke-width="13"
+                stroke-linecap="round"
+                stroke-dasharray="329.87 109.95"
+                transform="rotate(135,100,100)"
+              />
+              <!-- Filled arc -->
+              <circle id="gauge-arc" cx="100" cy="100" r="70"
+                fill="none" stroke="#00d1ff" stroke-width="13"
+                stroke-linecap="round"
+                stroke-dasharray="0 439.82"
+                transform="rotate(135,100,100)"
+                style="transition: stroke-dasharray .8s ease, stroke .5s ease;"
+              />
+              <!-- Voltage value -->
+              <text id="gauge-val"  x="100" y="97"  fill="#e2e2e2" text-anchor="middle" dominant-baseline="middle" font-size="32" font-weight="700" font-family="'Segoe UI',sans-serif">--.-</text>
+              <text id="gauge-unit" x="100" y="122" fill="#555"    text-anchor="middle" font-size="12" font-family="'Segoe UI',sans-serif" letter-spacing="2">VOLTS</text>
+            </svg>
+          </div>
+
+          <div class="telem-row">
+            <div class="telem-card">
+              <span class="tc-label">Roll</span>
+              <span class="tc-val" id="d-roll">--</span>
+              <span class="tc-unit">degrees</span>
+            </div>
+            <div class="telem-card">
+              <span class="tc-label">Pitch</span>
+              <span class="tc-val" id="d-pitch">--</span>
+              <span class="tc-unit">degrees</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Orientation panel -->
+        <div class="panel">
+          <div class="panel-title">Attitude / 3D Orientation</div>
+          <div class="orient-wrap">
+            <div class="scene">
+              <div class="cube" id="cube">
+                <div class="cf front">FRONT</div>
+                <div class="cf back">BACK</div>
+                <div class="cf top"></div>
+                <div class="cf bottom"></div>
+                <div class="cf left">L</div>
+                <div class="cf right">R</div>
+              </div>
+            </div>
+            <div class="angle-cards">
+              <div class="angle-card">
+                <div class="ac-label">Roll</div>
+                <div class="ac-val" id="a-roll">0°</div>
+              </div>
+              <div class="angle-card">
+                <div class="ac-label">Pitch</div>
+                <div class="ac-val" id="a-pitch">0°</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /dashboard -->
+
+    <!-- ══════════════════════ PID TUNING ══════════════════════ -->
+    <div class="tab-pane" id="tab-pid">
+      <div class="panel">
+        <div class="panel-title">PID Controller Values</div>
+        <table class="pid-tbl">
+          <thead>
+            <tr>
+              <th>Axis</th>
+              <th>P &mdash; Proportional</th>
+              <th>I &mdash; Integral</th>
+              <th>D &mdash; Derivative</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Roll</td>
+              <td><input class="pid-in" id="p-roll-p" type="number" value="45" min="0" max="255"></td>
+              <td><input class="pid-in" id="p-roll-i" type="number" value="40" min="0" max="255"></td>
+              <td><input class="pid-in" id="p-roll-d" type="number" value="20" min="0" max="255"></td>
+            </tr>
+            <tr>
+              <td>Pitch</td>
+              <td><input class="pid-in" id="p-pitch-p" type="number" value="45" min="0" max="255"></td>
+              <td><input class="pid-in" id="p-pitch-i" type="number" value="40" min="0" max="255"></td>
+              <td><input class="pid-in" id="p-pitch-d" type="number" value="20" min="0" max="255"></td>
+            </tr>
+            <tr>
+              <td>Yaw</td>
+              <td><input class="pid-in" id="p-yaw-p" type="number" value="60" min="0" max="255"></td>
+              <td><input class="pid-in" id="p-yaw-i" type="number" value="45" min="0" max="255"></td>
+              <td><input class="pid-in" id="p-yaw-d" type="number" value="0"  min="0" max="255"></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="pid-actions">
+          <button class="btn btn-primary"  id="btn-send-pid">
+            <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            Send to Drone
+          </button>
+          <button class="btn btn-outline" id="btn-reset-pid">
+            <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+            Reset Defaults
+          </button>
+        </div>
+      </div>
+    </div><!-- /pid -->
+
+    <!-- ══════════════════════ CLI ══════════════════════ -->
+    <div class="tab-pane" id="tab-cli">
+      <div class="cli-wrap">
+        <div id="cli-out">
+          <div class="cl info">BetaFly Configurator v1.0 — CLI Interface</div>
+          <div class="cl info">─────────────────────────────────────────────</div>
+          <div class="cl info">Connecting to ws://192.168.4.1:81 …</div>
+        </div>
+        <div class="cli-bar">
+          <span class="cli-ps">$&nbsp;</span>
+          <input type="text" id="cli-in" placeholder="Type a command and press Enter  (e.g.  status  |  save  |  reboot)" autocomplete="off" spellcheck="false" />
+          <button id="cli-send">Send</button>
+        </div>
+      </div>
+    </div><!-- /cli -->
+
+    <!-- ══════════════════════ MOTORS ══════════════════════ -->
+    <div class="tab-pane" id="tab-motors">
+      <div class="warn-box">
+        <svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+        <span><strong>SAFETY WARNING:</strong> Remove all propellers before enabling motor testing. Ensure the drone frame is secured to a stable surface.</span>
+      </div>
+      <div class="motor-toggle-row">
+        <label class="toggle">
+          <input type="checkbox" id="mot-enable">
+          <span class="toggle-track"></span>
+        </label>
+        <span id="mot-label">Motor Testing: <strong>OFF</strong></span>
+      </div>
+      <div class="motors-grid">
+        <div class="motor-card">
+          <span class="motor-name">Motor 1 · FL</span>
+          <span class="motor-val" id="mv1">1000</span>
+          <div class="motor-sl-wrap">
+            <input class="motor-sl" type="range" id="ms1" min="1000" max="2000" value="1000" step="10" disabled>
+          </div>
+        </div>
+        <div class="motor-card">
+          <span class="motor-name">Motor 2 · FR</span>
+          <span class="motor-val" id="mv2">1000</span>
+          <div class="motor-sl-wrap">
+            <input class="motor-sl" type="range" id="ms2" min="1000" max="2000" value="1000" step="10" disabled>
+          </div>
+        </div>
+        <div class="motor-card">
+          <span class="motor-name">Motor 3 · BL</span>
+          <span class="motor-val" id="mv3">1000</span>
+          <div class="motor-sl-wrap">
+            <input class="motor-sl" type="range" id="ms3" min="1000" max="2000" value="1000" step="10" disabled>
+          </div>
+        </div>
+        <div class="motor-card">
+          <span class="motor-name">Motor 4 · BR</span>
+          <span class="motor-val" id="mv4">1000</span>
+          <div class="motor-sl-wrap">
+            <input class="motor-sl" type="range" id="ms4" min="1000" max="2000" value="1000" step="10" disabled>
+          </div>
+        </div>
+      </div>
+    </div><!-- /motors -->
+
+    <!-- ══════════════════════ SAVE / REBOOT ══════════════════════ -->
+    <div class="tab-pane" id="tab-save">
+      <div class="save-grid">
+
+        <div class="act-card">
+          <svg viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+          <h3>Save Configuration</h3>
+          <p>Write all current PID values and settings to the flight controller's persistent storage (EEPROM / Flash).</p>
+          <button class="btn btn-primary" id="btn-save">
+            <svg viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+            Save
+          </button>
+        </div>
+
+        <div class="act-card">
+          <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+          <h3>Reboot Flight Controller</h3>
+          <p>Send a software reboot command to the STM32. The WebSocket connection will drop and reconnect automatically.</p>
+          <button class="btn btn-danger" id="btn-reboot">
+            <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+            Reboot
+          </button>
+        </div>
+
+        <div class="act-card">
+          <svg viewBox="0 0 24 24"><path d="M19 9H15V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+          <h3>Export Config</h3>
+          <p>Download the current PID configuration as a JSON file for backup or to share between flight controllers.</p>
+          <button class="btn btn-outline" id="btn-export">
+            <svg viewBox="0 0 24 24"><path d="M19 9H15V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+            Export JSON
+          </button>
+        </div>
+
+      </div>
+    </div><!-- /save -->
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- Toast notification -->
+<div id="toast"></div>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════════════════════ -->
+<script>
+/* ======================================================================
+   BetaFly Configurator — Application Script
+   ──────────────────────────────────────────
+   Target hardware : STM32-WB acting as a WiFi Access Point
+   WebSocket URL   : ws://192.168.4.1:81
+   Telemetry format: <TEL,V:11.1,R:2,P:-1>
+   PID set format  : <SET_PID,P_ROLL,45>
+   Motor format    : <MOTOR,1,1500>
+   CLI format      : raw text (e.g. "status", "save", "reboot")
+   ====================================================================== */
+
+'use strict';
+
+/* ── Constants ─────────────────────────────────────────────────────── */
+const WS_URL       = 'ws://192.168.4.1:81';
+const RECONNECT_MS = 3000;      // Reconnection retry interval
+const V_MAX        = 12.6;      // 3S LiPo fully charged
+const V_MIN        = 9.9;       // 3S LiPo cutoff
+const GAUGE_R      = 70;        // Gauge SVG circle radius (matches HTML)
+const CIRC         = 2 * Math.PI * GAUGE_R;  // ≈ 439.82
+const ARC          = 0.75 * CIRC;             // 270° span ≈ 329.87
+
+/** PID default values (used by "Reset Defaults" button) */
+const PID_DEFAULTS = {
+  roll:  { p: 45, i: 40, d: 20 },
+  pitch: { p: 45, i: 40, d: 20 },
+  yaw:   { p: 60, i: 45, d:  0 },
+};
+
+/* ── State ─────────────────────────────────────────────────────────── */
+let ws              = null;
+let wsRetryTimer    = null;
+let connected       = false;
+let roll            = 0;
+let pitch           = 0;
+let motorsArmed     = false;
+
+/** CLI command history buffer (↑/↓ navigation) */
+const cmdHistory    = [];
+let   historyIndex  = -1;
+
+/* ── DOM shortcuts ─────────────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+
+const wsDot    = $('ws-dot');
+const wsLabel  = $('ws-label');
+const tbTab    = $('tb-tab');
+const toast    = $('toast');
+
+// Dashboard
+const gaugeArc  = $('gauge-arc');
+const gaugeVal  = $('gauge-val');
+const dRoll     = $('d-roll');
+const dPitch    = $('d-pitch');
+const aRoll     = $('a-roll');
+const aPitch    = $('a-pitch');
+const cube      = $('cube');
+
+// CLI
+const cliOut    = $('cli-out');
+const cliIn     = $('cli-in');
+
+/* ====================================================================
+   NAVIGATION
+   ==================================================================== */
+
+/**
+ * Activate a tab pane and highlight the corresponding nav item.
+ * @param {string} tab  - One of: dashboard | pid | cli | motors | save
+ */
+function showTab(tab) {
+  const labels = {
+    dashboard: 'Dashboard',
+    pid:       'PID Tuning',
+    cli:       'Command Line Interface',
+    motors:    'Motor Testing',
+    save:      'Save / Reboot',
+  };
+
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.tab === tab);
+  });
+  document.querySelectorAll('.tab-pane').forEach(el => {
+    el.classList.toggle('active', el.id === 'tab-' + tab);
+  });
+
+  tbTab.textContent = labels[tab] ?? '';
+}
+
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => showTab(item.dataset.tab));
+});
+
+/* ====================================================================
+   WEBSOCKET
+   ==================================================================== */
+
+/** Open a WebSocket connection; auto-reconnects on failure. */
+function connect() {
+  if (wsRetryTimer) { clearTimeout(wsRetryTimer); wsRetryTimer = null; }
+
+  cliLog('Connecting to ' + WS_URL + ' …', 'info');
+
+  try {
+    ws = new WebSocket(WS_URL);
+  } catch (e) {
+    cliLog('WebSocket init error: ' + e.message, 'error');
+    retry();
+    return;
+  }
+
+  ws.addEventListener('open',    onOpen);
+  ws.addEventListener('message', onMessage);
+  ws.addEventListener('close',   onClose);
+  ws.addEventListener('error',   onError);
+}
+
+function onOpen() {
+  connected = true;
+  wsDot.classList.add('on');
+  wsLabel.textContent = 'Connected';
+  cliLog('Connection established.', 'info');
+  showToast('WebSocket Connected');
+  // Stop demo animation if running
+  stopDemo();
+}
+
+function onClose(ev) {
+  connected = false;
+  wsDot.classList.remove('on');
+  wsLabel.textContent = 'Disconnected';
+  cliLog('Disconnected (code ' + ev.code + '). Retrying in ' + (RECONNECT_MS / 1000) + 's …', 'info');
+  retry();
+}
+
+function onError() {
+  // 'error' always precedes 'close', no need to schedule retry here
+  cliLog('WebSocket error.', 'error');
+}
+
+function retry() {
+  wsRetryTimer = setTimeout(connect, RECONNECT_MS);
+}
+
+/**
+ * Send a string over the WebSocket.
+ * Returns true on success, false if the socket is not open.
+ * @param {string} msg
+ */
+function wsSend(msg) {
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    cliLog('Cannot send — not connected.', 'error');
+    return false;
+  }
+  ws.send(msg);
+  return true;
+}
+
+/* ====================================================================
+   MESSAGE HANDLER  — parse telemetry, route CLI responses
+   ==================================================================== */
+
+/**
+ * Handle an incoming WebSocket message.
+ * Telemetry frames start with "<TEL," and end with ">".
+ * All other strings are treated as CLI responses.
+ * @param {MessageEvent} ev
+ */
+function onMessage(ev) {
+  // Sanitise: treat as plain text only (no HTML interpretation)
+  const raw = String(ev.data).trim();
+
+  if (raw.startsWith('<TEL,') && raw.endsWith('>')) {
+    parseTelemetry(raw);
+  } else {
+    cliLog(raw, 'recv');
+  }
+}
+
+/**
+ * Parse a telemetry frame and update the UI.
+ * Format: <TEL,V:11.1,R:2,P:-1>
+ * @param {string} frame
+ */
+function parseTelemetry(frame) {
+  // Remove angle brackets → "TEL,V:11.1,R:2,P:-1"
+  const parts = frame.slice(1, -1).split(',');
+
+  parts.forEach(part => {
+    const sep = part.indexOf(':');
+    if (sep < 1) return;
+    const key = part.slice(0, sep).trim();
+    const num = parseFloat(part.slice(sep + 1));
+    if (isNaN(num)) return;
+
+    switch (key) {
+      case 'V': updateGauge(num);                   break;
+      case 'R': roll = num;  updateOrientation();   break;
+      case 'P': pitch = num; updateOrientation();   break;
+    }
+  });
+}
+
+/* ====================================================================
+   DASHBOARD — Battery gauge
+   ==================================================================== */
+
+/**
+ * Update the SVG arc gauge to reflect the given voltage.
+ * The arc is drawn using stroke-dasharray on a 270° circle segment.
+ * @param {number} v  - Voltage in volts
+ */
+function updateGauge(v) {
+  const clamped = Math.max(V_MIN, Math.min(V_MAX, v));
+  const pct     = (clamped - V_MIN) / (V_MAX - V_MIN);
+
+  // dasharray: [filled, remaining-of-full-circle]
+  const filled  = pct * ARC;
+  gaugeArc.style.strokeDasharray = filled + ' ' + (CIRC - filled);
+
+  // Colour: cyan > yellow > red
+  gaugeArc.style.stroke = pct > 0.6 ? 'var(--accent)' : pct > 0.3 ? 'var(--yellow)' : 'var(--red)';
+
+  // Text — sanitised numeric output (not user-controlled HTML)
+  gaugeVal.textContent = v.toFixed(1);
+}
+
+/* ====================================================================
+   DASHBOARD — 3D Orientation cube
+   ==================================================================== */
+
+/**
+ * Rotate the CSS 3-D cube to match roll/pitch angles.
+ * rotateX controls pitch (nose up = negative X rotation in CSS).
+ * rotateZ controls roll (banking).
+ */
+function updateOrientation() {
+  cube.style.transform = `rotateX(${-pitch}deg) rotateZ(${-roll}deg)`;
+
+  // textContent is safe — values are numbers we parsed
+  aRoll.textContent  = roll  + '°';
+  aPitch.textContent = pitch + '°';
+  dRoll.textContent  = roll;
+  dPitch.textContent = pitch;
+}
+
+/* ====================================================================
+   PID TUNING
+   ==================================================================== */
+
+/**
+ * Read every PID input, validate, and transmit to the drone.
+ * Protocol: <SET_PID,{TERM}_{AXIS},{VALUE}>
+ * e.g.      <SET_PID,P_ROLL,45>
+ */
+function sendPID() {
+  if (!connected) { showToast('Not connected to drone.'); return; }
+
+  const axes  = ['roll', 'pitch', 'yaw'];
+  const terms = ['p', 'i', 'd'];
+  let   count = 0;
+
+  for (const axis of axes) {
+    for (const term of terms) {
+      const el  = $('p-' + axis + '-' + term);
+      const val = parseInt(el.value, 10);
+
+      if (isNaN(val) || val < 0 || val > 255) {
+        showToast('Invalid ' + term.toUpperCase() + ' value for ' + axis + ' (0–255)');
+        return;
+      }
+
+      const msg = '<SET_PID,' + term.toUpperCase() + '_' + axis.toUpperCase() + ',' + val + '>';
+      if (wsSend(msg)) {
+        cliLog('→ ' + msg, 'sent');
+        count++;
+      }
+    }
+  }
+
+  if (count > 0) showToast(count + ' PID values sent');
+}
+
+/** Restore all PID inputs to their hard-coded defaults. */
+function resetPID() {
+  for (const [axis, vals] of Object.entries(PID_DEFAULTS)) {
+    for (const term of ['p', 'i', 'd']) {
+      const el = $('p-' + axis + '-' + term);
+      if (el) el.value = vals[term];
+    }
+  }
+  showToast('PID reset to defaults');
+}
+
+$('btn-send-pid').addEventListener('click', sendPID);
+$('btn-reset-pid').addEventListener('click', resetPID);
+
+/* ====================================================================
+   CLI
+   ==================================================================== */
+
+/**
+ * Append a line to the terminal output and auto-scroll.
+ * Uses textContent exclusively — no innerHTML — to prevent XSS from
+ * untrusted drone responses.
+ * @param {string} text
+ * @param {'sent'|'recv'|'info'|'error'} type
+ */
+function cliLog(text, type) {
+  const line = document.createElement('div');
+  line.className = 'cl ' + type;
+  line.textContent = text;         // Safe: never interpreted as HTML
+  cliOut.appendChild(line);
+  cliOut.scrollTop = cliOut.scrollHeight;
+}
+
+/** Transmit the CLI input field contents as a raw command. */
+function sendCmd() {
+  const cmd = cliIn.value.trim();
+  if (!cmd) return;
+
+  if (!connected) {
+    cliLog('Error: not connected.', 'error');
+    cliIn.value = '';
+    return;
+  }
+
+  // Push to history (avoid duplicate consecutive entries)
+  if (cmdHistory[0] !== cmd) cmdHistory.unshift(cmd);
+  if (cmdHistory.length > 50) cmdHistory.pop();
+  historyIndex = -1;
+
+  cliLog('$ ' + cmd, 'sent');  // Green "sent" style
+  wsSend(cmd);                 // Raw CLI command — no protocol wrapping
+  cliIn.value = '';
+}
+
+// Send on Enter; history navigation with ↑ / ↓
+cliIn.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    sendCmd();
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (historyIndex < cmdHistory.length - 1) {
+      historyIndex++;
+      cliIn.value = cmdHistory[historyIndex];
+    }
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (historyIndex > 0) {
+      historyIndex--;
+      cliIn.value = cmdHistory[historyIndex];
+    } else {
+      historyIndex = -1;
+      cliIn.value  = '';
+    }
+  }
+});
+
+$('cli-send').addEventListener('click', sendCmd);
+
+/* ====================================================================
+   MOTOR TESTING
+   ==================================================================== */
+
+$('mot-enable').addEventListener('change', function () {
+  motorsArmed = this.checked;
+  $('mot-label').innerHTML = 'Motor Testing: <strong>' + (motorsArmed ? 'ON' : 'OFF') + '</strong>';
+
+  for (let i = 1; i <= 4; i++) {
+    const sl = $('ms' + i);
+    sl.disabled = !motorsArmed;
+    if (!motorsArmed) {
+      // Reset to disarmed throttle when turning off
+      sl.value = 1000;
+      $('mv' + i).textContent = '1000';
+      if (connected) wsSend('<MOTOR,' + i + ',1000>');
+    }
+  }
+
+  if (motorsArmed) showToast('⚠ Motor testing ON — propellers removed?');
+});
+
+for (let i = 1; i <= 4; i++) {
+  $('ms' + i).addEventListener('input', function () {
+    $('mv' + i).textContent = this.value;
+    if (connected && motorsArmed) wsSend('<MOTOR,' + i + ',' + this.value + '>');
+  });
+}
+
+/* ====================================================================
+   SAVE / REBOOT / EXPORT
+   ==================================================================== */
+
+$('btn-save').addEventListener('click', () => {
+  if (!connected) { showToast('Not connected.'); return; }
+  wsSend('save');
+  cliLog('→ save', 'sent');
+  showToast('Save command sent');
+});
+
+$('btn-reboot').addEventListener('click', () => {
+  if (!connected) { showToast('Not connected.'); return; }
+  if (!confirm('Reboot the flight controller?\nThe WebSocket will reconnect automatically.')) return;
+  wsSend('reboot');
+  cliLog('→ reboot', 'sent');
+  showToast('Reboot command sent');
+});
+
+$('btn-export').addEventListener('click', () => {
+  const cfg = {
+    exported:  new Date().toISOString(),
+    target:    'BetaFly / STM32-WB',
+    pid: {
+      roll:  { p: $('p-roll-p').value,  i: $('p-roll-i').value,  d: $('p-roll-d').value  },
+      pitch: { p: $('p-pitch-p').value, i: $('p-pitch-i').value, d: $('p-pitch-d').value },
+      yaw:   { p: $('p-yaw-p').value,   i: $('p-yaw-i').value,   d: $('p-yaw-d').value   },
+    },
+  };
+
+  // Create an object URL for client-side download (no server needed)
+  const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement('a'), { href: url, download: 'betafly-pid.json' });
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Config exported');
+});
+
+/* ====================================================================
+   TOAST
+   ==================================================================== */
+
+let toastTimer = null;
+
+/**
+ * Display a brief status message in the corner of the screen.
+ * @param {string} msg
+ * @param {number} [ms=2400]  - Auto-dismiss delay
+ */
+function showToast(msg, ms = 2400) {
+  toast.textContent = msg;  // textContent — safe
+  toast.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), ms);
+}
+
+/* ====================================================================
+   DEMO MODE
+   Simulates live telemetry when the drone is unreachable.
+   The animation starts 1.5 s after page load if the socket hasn't
+   connected, and stops automatically once a real connection opens.
+   Remove or comment out this section in production firmware.
+   ==================================================================== */
+
+let demoTimer = null;
+let demoT     = 0;
+
+function stopDemo() {
+  if (demoTimer) { clearInterval(demoTimer); demoTimer = null; }
+}
+
+setTimeout(() => {
+  if (!connected) {
+    cliLog('No connection — demo mode active.', 'info');
+    demoTimer = setInterval(() => {
+      demoT += 0.045;
+      const dV = +(11.1 + Math.sin(demoT * 0.08) * 0.6).toFixed(2);
+      const dR = Math.round(Math.sin(demoT) * 18);
+      const dP = Math.round(Math.cos(demoT * 0.65) * 12);
+      updateGauge(dV);
+      roll = dR; pitch = dP;
+      updateOrientation();
+    }, 50);
+  }
+}, 1500);
+
+/* ====================================================================
+   BOOT
+   ==================================================================== */
+connect();
+
+</script>
+</body>
+</html>
