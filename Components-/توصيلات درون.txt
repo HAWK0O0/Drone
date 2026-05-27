@@ -1,0 +1,73 @@
+// =================================================================
+// مشروع: طائرة درون مخصصة (Custom Flight Controller)
+// المتحكم: STM32F405RGT6
+// اللوحة: WeAct-STM32F4 Core Board V1.1
+// المبرمج: عبد الله محمد علاء
+// =================================================================
+
+// --- [1] محركات التيار المستمر (DC Motors - PWM Pins) ---
+#define MOTOR_1_PIN      PA6  // الطرف 22
+#define MOTOR_2_PIN      PA7  // الطرف 23
+#define MOTOR_3_PIN      PB0  // الطرف 26
+#define MOTOR_4_PIN      PB1  // الطرف 27
+
+// --- [2] واجهات الحساسات والبيانات (I2C Interfaces) ---
+// I2C1 (الواجهة الأولى)
+#define I2C1_SCL         PB6  // الطرف 58
+#define I2C1_SDA         PB7  // الطرف 59
+// I2C2 (الواجهة الثانية)
+#define I2C2_SCL         PB10 // الطرف 29
+#define I2C2_SDA         PB11 // الطرف 30
+
+// --- [3] واجهات الاتصال (UART / Serial Ports) ---
+// واجهة GPS
+#define GPS_RX           PC6  // الطرف 37
+#define GPS_TX           PC7  // الطرف 38
+// واجهة مستقبل SBUS
+#define SBUS_RX          PA10 // الطرف 43 (USART1_RX)
+// واجهة الكاميرا أو ESP32-S3CAM
+#define CAM_TX           PA2  // الطرف 12 (TX-A2)
+#define CAM_RX           PA3  // الطرف 13 (RX-A3)
+
+// --- [4] المكونات الإضافية والتنبيه (Peripherals) ---
+#define BUZZER_PIN       PB14 // جهاز التنبيه - الطرف 53/54
+#define LED1_BLUE_EXT    PB12 // مؤشر LED أزرق إضافي - الطرف 51
+#define LED2_RED_EXT     PB13 // مؤشر LED أحمر إضافي - الطرف 52
+
+// --- [5] أزرار ومؤشرات اللوحة (On-Board Peripherals) ---
+#define BOARD_USER_KEY   PA0  // زر المستخدم (WKUP)
+#define BOARD_USER_LED   PB2  // مؤشر اللوحة الأزرق (متصل بـ PB2/BOOT1)
+#define BOARD_RESET_PIN  NRST // زر إعادة التشغيل
+
+// --- [6] واجهة بطاقة الذاكرة (TF Card / SDIO) ---
+#define SDIO_D0          PC8  // DAT0
+#define SDIO_D1          PC9  // DAT1
+#define SDIO_D2          PC10 // DAT2
+#define SDIO_D3          PC11 // CD/DAT3
+#define SDIO_CLK         PC12 // CLK
+#define SDIO_CMD         PD2  // CMD
+#define SDIO_DETECT      PA8  // كاشف البطاقة (Card Detect)
+
+// --- [7] برمجة النظام والبيانات (System & Debug) ---
+#define SWDIO            PA13 // برمجة
+#define SWCLK            PA14 // برمجة
+#define SWO              PB3  // تتبع (Trace)
+#define USB_DM           PA11 // USB Data Minus
+#define USB_DP           PA12 // USB Data Plus
+
+// --- [8] مذبذبات الساعة (Oscillators) ---
+// HSE: PH0, PH1
+// LSE: PC14, PC15
+
+// --- [9] البنات الفارغة المتاحة للتوسعة (Unused / Available Pins) ---
+/*
+  PA4, PA5      -> (مثالية لـ SPI1 أو ADC)
+  PB4, PB5      -> (مثالية لـ SPI1 أو PWM إضافي)
+  PB8, PB9      -> (مثالية لـ CAN Bus أو I2C احتياطي)
+  PB15          -> (طرف عام)
+  PC0, PC1, PC2 -> (أطراف ADC لمراقبة جهد البطارية 11.1V)
+  PC3, PC4, PC5 -> (أطراف ADC إضافية)
+  PC13          -> (طرف عام متاح بعد تحريره)
+*/
+
+
